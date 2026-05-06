@@ -1,8 +1,8 @@
-# Lab 20: Multi-Agent Research System Starter
+# Lab 20: Multi-Agent Research System
 
-Starter repo cho bài lab **Multi-Agent Systems**: xây dựng hệ thống nghiên cứu gồm **Supervisor + Researcher + Analyst + Writer** và benchmark với single-agent baseline.
+Repo hoàn chỉnh cho bài lab **Multi-Agent Systems**: hệ thống nghiên cứu gồm **Supervisor + Researcher + Analyst + Writer** và benchmark với single-agent baseline.
 
-> Mục tiêu của repo này là cung cấp **production-grade skeleton** để học viên phát triển code cá nhân. Các phần logic quan trọng được để ở dạng `TODO` để học viên tự triển khai.
+Hệ thống đã implement đầy đủ LLM client, search client, routing, worker agents, LangGraph workflow, Langfuse tracing, benchmark report và failure analysis.
 
 ## Learning outcomes
 
@@ -34,11 +34,11 @@ Trace + Benchmark Report
 ```text
 .
 ├── src/multi_agent_research_lab/
-│   ├── agents/              # Agent interfaces + skeletons
+│   ├── agents/              # Supervisor, Researcher, Analyst, Writer, Critic
 │   ├── core/                # Config, state, schemas, errors
-│   ├── graph/               # LangGraph workflow skeleton
-│   ├── services/            # LLM, search, storage clients
-│   ├── evaluation/          # Benchmark/evaluation skeleton
+│   ├── graph/               # LangGraph workflow
+│   ├── services/            # LLM and search clients
+│   ├── evaluation/          # Benchmark/evaluation logic
 │   ├── observability/       # Logging/tracing hooks
 │   └── cli.py               # CLI entrypoint
 ├── configs/                 # YAML configs for lab variants
@@ -59,7 +59,8 @@ Trace + Benchmark Report
 ```bash
 python -m venv .venv
 source .venv/bin/activate  # Windows: .venv\\Scripts\\activate
-pip install -e "[dev]"
+pip install -r requirements.txt
+# hoặc: pip install -e ".[dev,llm]"
 cp .env.example .env
 ```
 
@@ -69,8 +70,11 @@ Mở `.env` và điền key cần thiết.
 
 ```bash
 OPENAI_API_KEY=...
-# optional
-LANGSMITH_API_KEY=...
+# Langfuse tracing
+LANGFUSE_PUBLIC_KEY=...
+LANGFUSE_SECRET_KEY=...
+LANGFUSE_HOST=https://cloud.langfuse.com
+# optional search
 TAVILY_API_KEY=...
 ```
 
@@ -81,23 +85,31 @@ make test
 python -m multi_agent_research_lab.cli --help
 ```
 
-### 4. Chạy baseline skeleton
+### 4. Chạy single-agent baseline
 
 ```bash
 python -m multi_agent_research_lab.cli baseline \
   --query "Research GraphRAG state-of-the-art and write a 500-word summary"
 ```
 
-Lệnh này chỉ chạy khung baseline tối giản. Học viên cần tự triển khai logic LLM thực tế trong `src/multi_agent_research_lab/services/llm_client.py`.
+Lệnh này chạy baseline một agent để so sánh latency/cost/quality với multi-agent.
 
-### 5. Chạy multi-agent skeleton
+### 5. Chạy multi-agent workflow
 
 ```bash
 python -m multi_agent_research_lab.cli multi-agent \
   --query "Research GraphRAG state-of-the-art and write a 500-word summary"
 ```
 
-Mặc định lệnh sẽ báo các `TODO` cần làm. Đây là chủ đích của starter repo.
+Workflow sẽ route qua Researcher, Analyst, Writer và export trace sang Langfuse nếu đã cấu hình credentials.
+
+### 6. Chạy benchmark
+
+```bash
+python scripts/run_benchmark.py
+```
+
+Kết quả được ghi vào `reports/benchmark_report.md`.
 
 ## Milestones trong 2 giờ lab
 
@@ -120,23 +132,17 @@ Mặc định lệnh sẽ báo các `TODO` cần làm. Đây là chủ đích c�
 - Không để agent chạy vô hạn: dùng `max_iterations`, `timeout_seconds`.
 - Có benchmark report thay vì chỉ demo output đẹp.
 
-## TODO chính cho học viên
+## Implementation status
 
-Tìm trong code các marker:
+Đã hoàn thành:
 
-```bash
-grep -R "TODO(student)" -n src tests docs
-```
-
-Các phần học viên cần tự làm:
-
-1. Implement LLM client.
-2. Implement web/search client hoặc mock search source.
-3. Implement routing decision trong Supervisor.
-4. Implement từng worker agent.
-5. Build LangGraph workflow.
-6. Thêm tracing provider thật: LangSmith, Langfuse hoặc OpenTelemetry.
-7. Viết benchmark report.
+1. LLM client với OpenAI, timeout, retry và cost tracking.
+2. Search client với Tavily và mock fallback.
+3. Supervisor routing policy.
+4. Researcher, Analyst, Writer và optional Critic.
+5. LangGraph workflow.
+6. Langfuse tracing provider.
+7. Benchmark report và failure analysis.
 
 ## Deliverables
 
